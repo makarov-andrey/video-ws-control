@@ -1,0 +1,12 @@
+{
+    "name": "andrey/video-ws-control",
+    "authors": [
+        {
+            "name": "Макаров Андрей",
+            "email": "a.makarov@itech-group.ru"
+        }
+    ],
+    "require": {
+        "cboden/ratchet": "^0.4.1"
+    }
+}
