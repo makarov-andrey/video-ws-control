@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.channel = pusher.subscribe(CHANNEL_NAME);
     window.channel.bind(EVENT_NAME, function(message) {
-        console.log("Message: ", message);
+        console.log("Received: ", message);
 
         let video = document.getElementById('video'),
             blockEventOnce = (eventName) => {
@@ -52,11 +52,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function sendMessage (command) {
-        console.log('sended ' + command);
-        window.channel.trigger(EVENT_NAME, {
+        let message = {
             command: command,
             time: document.getElementById('video').currentTime
-        });
+        };
+        console.log('Sended: ', message);
+        window.channel.trigger(EVENT_NAME, message);
     }
 
     let video = document.getElementById('video');
