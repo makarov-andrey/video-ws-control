@@ -4,37 +4,27 @@ window.blockings = {
     seeked: false
 };
 
+const CHANNEL_NAME = 'private-video-control';
+const EVENT_NAME = 'client-message';
+
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('video-input').addEventListener('change', function () {
         document.getElementById('video-source').src = URL.createObjectURL(this.files[0]);
         document.getElementById('video').load();
     });
 
-    openSocket();
-
-    let video = document.getElementById('video');
-    video.onplay = () => !window.blockings.play && sendMessage('play');
-    video.onpause = () => !window.blockings.pause && sendMessage('pause');
-    video.onseeked = () => !window.blockings.seeked && sendMessage('seek');
-});
-
-function openSocket () {
-    window.socket = new WebSocket("ws://localhost:8080/control");
-
-    window.socket.addEventListener('open', function() {
-        console.log("Соединение установлено.");
+    window.pusher = new Pusher('7bf6c5f0a13626965bb0', {
+        authTransport: 'jsonp',
+        authEndpoint: '/pusher-auth.php',
+        cluster: 'eu',
+        encrypted: true
     });
 
-    window.socket.addEventListener('close', function(event) {
-        console.log('Соединение оборвано. Код: ' + event.code + ' причина: ' + event.reason);
-        setTimeout(openSocket, 5000);
-    });
+    window.channel = pusher.subscribe(CHANNEL_NAME);
+    window.channel.bind(EVENT_NAME, function(message) {
+        console.log("Message: ", message);
 
-    window.socket.addEventListener('message', function(event) {
-        console.log("Message: " + event.data);
-
-        let message = JSON.parse(event.data),
-            video = document.getElementById('video'),
+        let video = document.getElementById('video'),
             blockEventOnce = (eventName) => {
                 window.blockings[eventName] = true;
                 let handler = () => {
@@ -60,12 +50,17 @@ function openSocket () {
                 break;
         }
     });
-}
 
-function sendMessage (command) {
-    console.log('sended ' + command);
-    window.socket.send(JSON.stringify({
-        command: command,
-        time: document.getElementById('video').currentTime
-    }));
-}
+    function sendMessage (command) {
+        console.log('sended ' + command);
+        window.channel.trigger(EVENT_NAME, {
+            command: command,
+            time: document.getElementById('video').currentTime
+        });
+    }
+
+    let video = document.getElementById('video');
+    video.onplay = () => !window.blockings.play && sendMessage('play');
+    video.onpause = () => !window.blockings.pause && sendMessage('pause');
+    video.onseeked = () => !window.blockings.seeked && sendMessage('seek');
+});
